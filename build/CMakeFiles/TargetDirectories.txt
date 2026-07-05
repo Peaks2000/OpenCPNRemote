@@ -1,0 +1,14 @@
+/home/finn/Documents/opencpn remote/build/CMakeFiles/opencpn_remote_pi.dir
+/home/finn/Documents/opencpn remote/build/CMakeFiles/plugin_tarball.dir
+/home/finn/Documents/opencpn remote/build/CMakeFiles/edit_cache.dir
+/home/finn/Documents/opencpn remote/build/CMakeFiles/rebuild_cache.dir
+/home/finn/Documents/opencpn remote/build/CMakeFiles/list_install_components.dir
+/home/finn/Documents/opencpn remote/build/CMakeFiles/install.dir
+/home/finn/Documents/opencpn remote/build/CMakeFiles/install/local.dir
+/home/finn/Documents/opencpn remote/build/CMakeFiles/install/strip.dir
+/home/finn/Documents/opencpn remote/build/libs/api-17/CMakeFiles/edit_cache.dir
+/home/finn/Documents/opencpn remote/build/libs/api-17/CMakeFiles/rebuild_cache.dir
+/home/finn/Documents/opencpn remote/build/libs/api-17/CMakeFiles/list_install_components.dir
+/home/finn/Documents/opencpn remote/build/libs/api-17/CMakeFiles/install.dir
+/home/finn/Documents/opencpn remote/build/libs/api-17/CMakeFiles/install/local.dir
+/home/finn/Documents/opencpn remote/build/libs/api-17/CMakeFiles/install/strip.dir

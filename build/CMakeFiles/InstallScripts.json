@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/finn/Documents/opencpn remote/build/cmake_install.cmake",
+		"/home/finn/Documents/opencpn remote/build/libs/api-17/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

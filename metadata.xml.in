@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin version="1">
+<name> @PLUGIN_DISPLAY_NAME@ </name>
+<version> @OCPN_REMOTE_VERSION@ </version>
+<release> 0 </release>
+<summary> @PLUGIN_SUMMARY@ </summary>
+
+<api-version> @API_VERSION@ </api-version>
+<open-source> yes </open-source>
+<author> @PLUGIN_AUTHOR@ </author>
+<source> @PLUGIN_SOURCE@ </source>
+
+<description>
+@PLUGIN_DESCRIPTION@
+</description>
+
+<target>@OCPN_REMOTE_TARGET@</target>
+<build-target>@OCPN_REMOTE_BUILD_TARGET@</build-target>
+<build-gtk></build-gtk>
+<target-version>@OCPN_REMOTE_TARGET_VERSION@</target-version>
+<target-arch>@OCPN_REMOTE_TARGET_ARCH@</target-arch>
+<tarball-url>
+file://@CMAKE_CURRENT_BINARY_DIR@/@OCPN_REMOTE_TARBALL_NAME@.tar.gz
+</tarball-url>
+<info-url> https://opencpn.org </info-url>
+</plugin>
