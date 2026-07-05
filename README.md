@@ -1,4 +1,4 @@
-# OpenCPN Remote Plugin
+# OpenCPN Remote
 
 This plugin hosts a browser-based remote view of OpenCPN without sharing the whole desktop. It captures only the OpenCPN application window and serves it to a responsive web page with pointer and keyboard input forwarded back to OpenCPN.
 
