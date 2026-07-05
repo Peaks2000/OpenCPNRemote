@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <wx/window.h>
+#include <wx/gdicmn.h>
 
 class RemoteFrameProvider {
 public:
@@ -39,9 +40,19 @@ private:
     wxPoint point;
     int key_code = 0;
     int wheel_delta = 0;
+    int sequence = 0;
+  };
+
+  struct CaptureRegion {
+    wxWindow* window = nullptr;
+    wxRect screen_rect;
+    wxPoint frame_origin;
   };
 
   wxWindow* GetTargetWindow() const;
+  std::vector<wxWindow*> GetOpenCpnWindows() const;
+  wxWindow* WindowForFramePoint(const wxPoint& point, wxPoint* local_point) const;
+  wxWindow* FindTapTarget(const wxPoint& point, wxPoint* local_point) const;
   wxPoint ExtractPoint(const std::string& body) const;
   std::string ExtractString(const std::string& body,
                             const std::string& key) const;
@@ -64,4 +75,7 @@ private:
   int width_ = 0;
   int height_ = 0;
   unsigned long sequence_ = 0;
+  int last_pointer_sequence_ = 0;
+  bool remote_mouse_down_ = false;
+  std::vector<CaptureRegion> capture_regions_;
 };

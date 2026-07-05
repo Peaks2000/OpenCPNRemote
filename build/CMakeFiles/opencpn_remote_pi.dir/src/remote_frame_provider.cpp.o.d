@@ -282,44 +282,44 @@ CMakeFiles/opencpn_remote_pi.dir/src/remote_frame_provider.cpp.o: \
  /usr/include/bits/sigstksz.h /usr/include/bits/ss_flags.h \
  /usr/include/bits/types/struct_sigstack.h /usr/include/bits/sigthread.h \
  /usr/include/bits/signal_ext.h /usr/include/wx-3.2/wx/gtk/app.h \
- /usr/include/wx-3.2/wx/dcclient.h /usr/include/wx-3.2/wx/dc.h \
- /usr/include/wx-3.2/wx/bitmap.h /usr/include/wx-3.2/wx/image.h \
- /usr/include/wx-3.2/wx/stream.h /usr/include/wx-3.2/wx/imagbmp.h \
- /usr/include/wx-3.2/wx/imagpng.h /usr/include/wx-3.2/wx/imaggif.h \
- /usr/include/wx-3.2/wx/imagpcx.h /usr/include/wx-3.2/wx/imagjpeg.h \
- /usr/include/wx-3.2/wx/imagtga.h /usr/include/wx-3.2/wx/imagtiff.h \
- /usr/include/wx-3.2/wx/imagpnm.h /usr/include/wx-3.2/wx/imagxpm.h \
- /usr/include/wx-3.2/wx/imagiff.h /usr/include/wx-3.2/wx/gtk/bitmap.h \
- /usr/include/wx-3.2/wx/brush.h /usr/include/wx-3.2/wx/gtk/brush.h \
- /usr/include/wx-3.2/wx/pen.h /usr/include/wx-3.2/wx/peninfobase.h \
- /usr/include/wx-3.2/wx/gtk/pen.h /usr/include/wx-3.2/wx/affinematrix2d.h \
+ /usr/include/wx-3.2/wx/button.h /usr/include/wx-3.2/wx/anybutton.h \
+ /usr/include/wx-3.2/wx/bmpbndl.h /usr/include/wx-3.2/wx/bitmap.h \
+ /usr/include/wx-3.2/wx/image.h /usr/include/wx-3.2/wx/stream.h \
+ /usr/include/wx-3.2/wx/imagbmp.h /usr/include/wx-3.2/wx/imagpng.h \
+ /usr/include/wx-3.2/wx/imaggif.h /usr/include/wx-3.2/wx/imagpcx.h \
+ /usr/include/wx-3.2/wx/imagjpeg.h /usr/include/wx-3.2/wx/imagtga.h \
+ /usr/include/wx-3.2/wx/imagtiff.h /usr/include/wx-3.2/wx/imagpnm.h \
+ /usr/include/wx-3.2/wx/imagxpm.h /usr/include/wx-3.2/wx/imagiff.h \
+ /usr/include/wx-3.2/wx/gtk/bitmap.h /usr/include/wx-3.2/wx/control.h \
+ /usr/include/wx-3.2/wx/gtk/control.h \
+ /usr/include/wx-3.2/wx/gtk/anybutton.h \
+ /usr/include/wx-3.2/wx/gtk/button.h /usr/include/wx-3.2/wx/dcclient.h \
+ /usr/include/wx-3.2/wx/dc.h /usr/include/wx-3.2/wx/brush.h \
+ /usr/include/wx-3.2/wx/gtk/brush.h /usr/include/wx-3.2/wx/pen.h \
+ /usr/include/wx-3.2/wx/peninfobase.h /usr/include/wx-3.2/wx/gtk/pen.h \
+ /usr/include/wx-3.2/wx/affinematrix2d.h \
  /usr/include/wx-3.2/wx/affinematrix2dbase.h \
  /usr/include/wx-3.2/wx/geometry.h /usr/include/wx-3.2/wx/mstream.h \
- /usr/include/wx-3.2/wx/wx.h /usr/include/wx-3.2/wx/hash.h \
- /usr/include/wx-3.2/wx/stopwatch.h /usr/include/wx-3.2/wx/timer.h \
- /usr/include/wx-3.2/wx/module.h /usr/include/wx-3.2/wx/wxcrtvararg.h \
- /usr/include/wx-3.2/wx/containr.h /usr/include/wx-3.2/wx/panel.h \
- /usr/include/wx-3.2/wx/generic/panelg.h \
  /usr/include/wx-3.2/wx/toplevel.h /usr/include/wx-3.2/wx/nonownedwnd.h \
  /usr/include/wx-3.2/wx/gtk/nonownedwnd.h \
  /usr/include/wx-3.2/wx/iconbndl.h /usr/include/wx-3.2/wx/icon.h \
  /usr/include/wx-3.2/wx/iconloc.h /usr/include/wx-3.2/wx/generic/icon.h \
  /usr/include/wx-3.2/wx/weakref.h /usr/include/wx-3.2/wx/meta/int2type.h \
- /usr/include/wx-3.2/wx/gtk/toplevel.h /usr/include/wx-3.2/wx/frame.h \
- /usr/include/wx-3.2/wx/statusbr.h /usr/include/wx-3.2/wx/control.h \
- /usr/include/wx-3.2/wx/gtk/control.h \
+ /usr/include/wx-3.2/wx/gtk/toplevel.h /usr/include/wx-3.2/wx/wx.h \
+ /usr/include/wx-3.2/wx/hash.h /usr/include/wx-3.2/wx/stopwatch.h \
+ /usr/include/wx-3.2/wx/timer.h /usr/include/wx-3.2/wx/module.h \
+ /usr/include/wx-3.2/wx/wxcrtvararg.h /usr/include/wx-3.2/wx/containr.h \
+ /usr/include/wx-3.2/wx/panel.h /usr/include/wx-3.2/wx/generic/panelg.h \
+ /usr/include/wx-3.2/wx/frame.h /usr/include/wx-3.2/wx/statusbr.h \
  /usr/include/wx-3.2/wx/generic/statusbr.h \
- /usr/include/wx-3.2/wx/gtk/frame.h /usr/include/wx-3.2/wx/bmpbndl.h \
- /usr/include/wx-3.2/wx/dcmemory.h /usr/include/wx-3.2/wx/dcprint.h \
- /usr/include/wx-3.2/wx/dcscreen.h /usr/include/wx-3.2/wx/button.h \
- /usr/include/wx-3.2/wx/anybutton.h \
- /usr/include/wx-3.2/wx/gtk/anybutton.h \
- /usr/include/wx-3.2/wx/gtk/button.h /usr/include/wx-3.2/wx/menuitem.h \
- /usr/include/wx-3.2/wx/gtk/menuitem.h /usr/include/wx-3.2/wx/menu.h \
- /usr/include/wx-3.2/wx/gtk/menu.h /usr/include/wx-3.2/wx/dialog.h \
- /usr/include/wx-3.2/wx/sharedptr.h /usr/include/wx-3.2/wx/atomic.h \
- /usr/include/wx-3.2/wx/gtk/dialog.h /usr/include/wx-3.2/wx/settings.h \
- /usr/include/wx-3.2/wx/msgdlg.h /usr/include/wx-3.2/wx/stockitem.h \
+ /usr/include/wx-3.2/wx/gtk/frame.h /usr/include/wx-3.2/wx/dcmemory.h \
+ /usr/include/wx-3.2/wx/dcprint.h /usr/include/wx-3.2/wx/dcscreen.h \
+ /usr/include/wx-3.2/wx/menuitem.h /usr/include/wx-3.2/wx/gtk/menuitem.h \
+ /usr/include/wx-3.2/wx/menu.h /usr/include/wx-3.2/wx/gtk/menu.h \
+ /usr/include/wx-3.2/wx/dialog.h /usr/include/wx-3.2/wx/sharedptr.h \
+ /usr/include/wx-3.2/wx/atomic.h /usr/include/wx-3.2/wx/gtk/dialog.h \
+ /usr/include/wx-3.2/wx/settings.h /usr/include/wx-3.2/wx/msgdlg.h \
+ /usr/include/wx-3.2/wx/stockitem.h \
  /usr/include/wx-3.2/wx/generic/msgdlgg.h \
  /usr/include/wx-3.2/wx/gtk/msgdlg.h /usr/include/wx-3.2/wx/dataobj.h \
  /usr/include/wx-3.2/wx/gtk/dataform.h \

@@ -5,9 +5,11 @@
 #include <chrono>
 
 #include <wx/app.h>
+#include <wx/button.h>
 #include <wx/dcclient.h>
 #include <wx/image.h>
 #include <wx/mstream.h>
+#include <wx/toplevel.h>
 #include <wx/wx.h>
 
 #include "ocpn_plugin.h"
@@ -19,6 +21,13 @@ constexpr const char* kLocalClientId = "__opencpn_local__";
 long long NowMs() {
   using namespace std::chrono;
   return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+}
+
+wxRect ClientScreenRect(wxWindow* window) {
+  if (!window) return wxRect();
+  const wxSize size = window->GetClientSize();
+  if (size.x <= 0 || size.y <= 0) return wxRect();
+  return wxRect(window->ClientToScreen(wxPoint(0, 0)), size);
 }
 
 }  // namespace
@@ -54,17 +63,57 @@ wxWindow* RemoteFrameProvider::GetTargetWindow() const {
   return wxTheApp ? wxTheApp->GetTopWindow() : nullptr;
 }
 
+std::vector<wxWindow*> RemoteFrameProvider::GetOpenCpnWindows() const {
+  std::vector<wxWindow*> windows;
+  wxWindow* main = wxTheApp ? wxTheApp->GetTopWindow() : nullptr;
+  if (main && main->IsShownOnScreen()) windows.push_back(main);
+
+  for (wxWindowList::compatibility_iterator node = wxTopLevelWindows.GetFirst();
+       node; node = node->GetNext()) {
+    wxWindow* window = node->GetData();
+    if (!window || window == main || !window->IsShownOnScreen()) continue;
+    if (ClientScreenRect(window).IsEmpty()) continue;
+    windows.push_back(window);
+  }
+
+  return windows;
+}
+
 void RemoteFrameProvider::CaptureOpenCpnWindow() {
-  wxWindow* window = GetTargetWindow();
-  if (!window || !window->IsShownOnScreen()) return;
+  std::vector<wxWindow*> windows = GetOpenCpnWindows();
+  if (windows.empty()) return;
 
-  wxSize size = window->GetClientSize();
-  if (size.x <= 0 || size.y <= 0) return;
+  wxRect bounds;
+  bool have_bounds = false;
+  for (wxWindow* window : windows) {
+    const wxRect rect = ClientScreenRect(window);
+    if (rect.IsEmpty()) continue;
+    if (!have_bounds) {
+      bounds = rect;
+      have_bounds = true;
+    } else {
+      bounds.Union(rect);
+    }
+  }
+  if (!have_bounds || bounds.GetWidth() <= 0 || bounds.GetHeight() <= 0) return;
 
-  wxBitmap bmp(size.x, size.y, 24);
+  wxBitmap bmp(bounds.GetWidth(), bounds.GetHeight(), 24);
   wxMemoryDC memdc(bmp);
-  wxWindowDC windc(window);
-  memdc.Blit(0, 0, size.x, size.y, &windc, 0, 0);
+  memdc.SetBackground(wxBrush(wxColour(5, 6, 8)));
+  memdc.Clear();
+
+  std::vector<CaptureRegion> regions;
+  for (wxWindow* window : windows) {
+    const wxRect rect = ClientScreenRect(window);
+    if (rect.IsEmpty()) continue;
+
+    wxClientDC windc(window);
+    memdc.Blit(rect.GetLeft() - bounds.GetLeft(), rect.GetTop() - bounds.GetTop(),
+               rect.GetWidth(), rect.GetHeight(), &windc, 0, 0);
+    regions.push_back({window, rect,
+                       wxPoint(rect.GetLeft() - bounds.GetLeft(),
+                               rect.GetTop() - bounds.GetTop())});
+  }
   memdc.SelectObject(wxNullBitmap);
 
   wxImage image = bmp.ConvertToImage();
@@ -78,8 +127,9 @@ void RemoteFrameProvider::CaptureOpenCpnWindow() {
 
   std::lock_guard<std::mutex> lock(mutex_);
   jpeg_ = std::move(bytes);
-  width_ = size.x;
-  height_ = size.y;
+  width_ = bounds.GetWidth();
+  height_ = bounds.GetHeight();
+  capture_regions_ = std::move(regions);
   ++sequence_;
 }
 
@@ -114,8 +164,13 @@ void RemoteFrameProvider::HandlePointerEvent(const std::string& body) {
   input.type = ExtractString(body, "type");
   input.point = ExtractPoint(body);
   input.wheel_delta = ExtractInt(body, "delta", 0);
+  input.sequence = ExtractInt(body, "seq", 0);
 
   std::lock_guard<std::mutex> lock(mutex_);
+  if (input.sequence > 0) {
+    if (input.sequence <= last_pointer_sequence_) return;
+    last_pointer_sequence_ = input.sequence;
+  }
   if (input.type == "move" && !input_queue_.empty()) {
     QueuedInput& back = input_queue_.back();
     if (back.kind == QueuedInput::Kind::Pointer && back.type == "move") {
@@ -131,6 +186,7 @@ void RemoteFrameProvider::HandleKeyEvent(const std::string& body) {
   input.kind = QueuedInput::Kind::Key;
   input.type = ExtractString(body, "type");
   input.key_code = ExtractInt(body, "keyCode", 0);
+  input.sequence = ExtractInt(body, "seq", 0);
 
   std::lock_guard<std::mutex> lock(mutex_);
   if (input_queue_.size() < 512) input_queue_.push_back(input);
@@ -193,6 +249,59 @@ wxPoint RemoteFrameProvider::ExtractPoint(const std::string& body) const {
   return wxPoint(ExtractInt(body, "x", 0), ExtractInt(body, "y", 0));
 }
 
+wxWindow* RemoteFrameProvider::WindowForFramePoint(const wxPoint& point,
+                                                   wxPoint* local_point) const {
+  for (auto it = capture_regions_.rbegin(); it != capture_regions_.rend(); ++it) {
+    wxRect frame_rect(it->frame_origin, it->screen_rect.GetSize());
+    if (!frame_rect.Contains(point)) continue;
+    wxPoint local(point.x - it->frame_origin.x, point.y - it->frame_origin.y);
+    wxWindow* target = it->window;
+    wxPoint screen = it->screen_rect.GetTopLeft() + local;
+    wxWindow* child = wxFindWindowAtPoint(screen);
+    if (child) {
+      for (wxWindow* p = child; p; p = p->GetParent()) {
+        if (p == it->window) {
+          target = child;
+          local = target->ScreenToClient(screen);
+          break;
+        }
+      }
+    }
+    if (local_point) *local_point = local;
+    return target;
+  }
+
+  wxWindow* fallback = GetTargetWindow();
+  if (fallback && local_point) *local_point = point;
+  return fallback;
+}
+
+wxWindow* RemoteFrameProvider::FindTapTarget(const wxPoint& point,
+                                             wxPoint* local_point) const {
+  wxPoint local;
+  wxWindow* target = WindowForFramePoint(point, &local);
+  if (target && target != GetTargetWindow()) {
+    if (local_point) *local_point = local;
+    return target;
+  }
+
+  constexpr int offsets[][2] = {
+      {0, 0},   {-10, 0}, {10, 0},  {0, -10}, {0, 10},  {-10, -10},
+      {10, -10}, {-10, 10}, {10, 10}, {-18, 0}, {18, 0}, {0, -18},
+      {0, 18}};
+  for (const auto& offset : offsets) {
+    wxPoint candidate(point.x + offset[0], point.y + offset[1]);
+    wxPoint candidate_local;
+    wxWindow* candidate_target = WindowForFramePoint(candidate, &candidate_local);
+    if (!candidate_target || candidate_target == GetTargetWindow()) continue;
+    if (local_point) *local_point = candidate_local;
+    return candidate_target;
+  }
+
+  if (local_point) *local_point = local;
+  return target;
+}
+
 std::string RemoteFrameProvider::ExtractString(const std::string& body,
                                                const std::string& key) const {
   const std::string needle = "\"" + key + "\"";
@@ -236,7 +345,40 @@ bool RemoteFrameProvider::ExtractBool(const std::string& body,
 }
 
 void RemoteFrameProvider::PostMouse(const QueuedInput& input) {
-  wxWindow* target = GetTargetWindow();
+  if (input.type == "tap") {
+    wxPoint local_point;
+    wxWindow* target = FindTapTarget(input.point, &local_point);
+    if (!target) return;
+    const int x = std::clamp(local_point.x, 0, std::max(0, target->GetClientSize().x - 1));
+    const int y = std::clamp(local_point.y, 0, std::max(0, target->GetClientSize().y - 1));
+    auto process_mouse = [&](wxEventType type, bool left_down) {
+      wxMouseEvent event(type);
+      event.SetEventObject(target);
+      event.SetId(target->GetId());
+      event.SetPosition(wxPoint(x, y));
+      event.SetLeftDown(left_down);
+      event.m_x = x;
+      event.m_y = y;
+      event.m_leftDown = left_down;
+      event.m_clickCount = 1;
+      target->GetEventHandler()->ProcessEvent(event);
+    };
+    target->SetFocus();
+    process_mouse(wxEVT_ENTER_WINDOW, false);
+    process_mouse(wxEVT_MOTION, false);
+    process_mouse(wxEVT_LEFT_DOWN, true);
+    process_mouse(wxEVT_LEFT_UP, false);
+    if (wxDynamicCast(target, wxButton)) {
+      wxCommandEvent command(wxEVT_BUTTON, target->GetId());
+      command.SetEventObject(target);
+      target->ProcessWindowEvent(command);
+    }
+    remote_mouse_down_ = false;
+    return;
+  }
+
+  wxPoint local_point;
+  wxWindow* target = WindowForFramePoint(input.point, &local_point);
   if (!target) return;
 
   wxEventType event_type = wxEVT_MOTION;
@@ -245,11 +387,25 @@ void RemoteFrameProvider::PostMouse(const QueuedInput& input) {
   if (input.type == "move") event_type = wxEVT_MOTION;
   if (input.type == "wheel") event_type = wxEVT_MOUSEWHEEL;
 
+  const int x = std::clamp(local_point.x, 0, std::max(0, target->GetClientSize().x - 1));
+  const int y = std::clamp(local_point.y, 0, std::max(0, target->GetClientSize().y - 1));
+  if (input.type == "move" && !remote_mouse_down_) {
+    wxMouseEvent down(wxEVT_LEFT_DOWN);
+    down.SetEventObject(target);
+    down.m_x = x;
+    down.m_y = y;
+    down.m_leftDown = true;
+    remote_mouse_down_ = true;
+    wxPostEvent(target, down);
+  }
+
   wxMouseEvent event(event_type);
   event.SetEventObject(target);
-  event.m_x = std::clamp(input.point.x, 0, std::max(0, target->GetClientSize().x - 1));
-  event.m_y = std::clamp(input.point.y, 0, std::max(0, target->GetClientSize().y - 1));
-  event.m_leftDown = input.type == "down" || input.type == "move";
+  event.m_x = x;
+  event.m_y = y;
+  if (input.type == "down") remote_mouse_down_ = true;
+  event.m_leftDown = input.type == "down" || (input.type == "move" && remote_mouse_down_);
+  if (input.type == "up") remote_mouse_down_ = false;
   if (event_type == wxEVT_MOUSEWHEEL) {
     event.m_wheelRotation = input.wheel_delta;
   }
@@ -258,6 +414,7 @@ void RemoteFrameProvider::PostMouse(const QueuedInput& input) {
 
 void RemoteFrameProvider::PostKey(const QueuedInput& input) {
   wxWindow* target = GetTargetWindow();
+  if (!capture_regions_.empty()) target = capture_regions_.back().window;
   if (!target) return;
 
   wxKeyEvent event(input.type == "keyup" ? wxEVT_KEY_UP : wxEVT_KEY_DOWN);

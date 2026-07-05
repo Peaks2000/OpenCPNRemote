@@ -247,34 +247,7 @@ void OpenCpnRemotePi::CaptureFrame() {
 }
 
 void OpenCpnRemotePi::UpdateRemoteLock() {
-  const bool remote_active = frames_->IsRemoteActive();
-  const std::string active_client = frames_->ActiveClientId();
-  if (!active_client.empty() && active_client != last_active_client_) {
-    local_unlocked_ = false;
-    pause_window_suppressed_ = false;
-    last_active_client_ = active_client;
-  }
-  wxWindow* window = wxTheApp ? wxTheApp->GetTopWindow() : nullptr;
-  if (!window) return;
-
-  if (!remote_active) {
-    RestoreLocalWindow();
-    local_unlocked_ = false;
-    pause_window_suppressed_ = false;
-    if (active_client.empty()) last_active_client_.clear();
-    return;
-  }
-
-  if (local_unlocked_) return;
-  if (pause_window_suppressed_) return;
-  auto* top_level = wxDynamicCast(window, wxTopLevelWindow);
-  if (top_level && top_level->IsIconized()) return;
-
-  ApplyLocalInputLock(true);
-
-  if (!lock_dialog_) lock_dialog_ = std::make_unique<RemoteLockDialog>(window, this);
-  lock_dialog_->FitOverParent();
-  if (!lock_dialog_->IsShown()) lock_dialog_->Show();
+  RestoreLocalWindow();
 }
 
 void OpenCpnRemotePi::ApplyLocalInputLock(bool locked) {
