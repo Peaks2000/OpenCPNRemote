@@ -16,7 +16,7 @@ html,body{margin:0;width:100%;height:100%;background:#050608;overflow:hidden;tou
 #tools button{width:38px;height:34px;border:0;border-radius:6px;background:rgba(0,0,0,.6);color:#fff;font:18px system-ui,sans-serif}
 @media (max-width:700px),(pointer:coarse){#tools{display:none}#state{left:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);opacity:.72}}
 #auth{position:fixed;inset:0;display:none;place-items:center;background:#101418;color:#eef3f6;font:16px system-ui,sans-serif}
-#auth form{width:min(340px,calc(100vw - 32px));display:grid;gap:10px}
+#auth form{width:min(340px,calc(100vw - 32px));display:grid;gap:10px;touch-action:auto}
 #auth input,#auth button{font:inherit;padding:10px;border-radius:6px;border:1px solid #3b464d}
 #auth button{background:#1d6f94;color:white;border:0}
 #takeover{position:fixed;right:10px;bottom:10px;display:none;padding:8px 10px;border:0;border-radius:6px;background:#1d6f94;color:#fff;font:14px system-ui,sans-serif}
@@ -145,14 +145,15 @@ setInterval(heartbeat,1000);
 window.addEventListener("resize",heartbeat);
 window.addEventListener("resize",clampView);
 heartbeat();
+function inAuth(e){return auth.style.display!=="none"&&auth.contains(e.target)}
 function isTouchPointer(e){return e.pointerType==="touch"||e.pointerType==="pen"}
-window.addEventListener("pointerdown",e=>{if(isTouchPointer(e)){e.preventDefault();return}if(clientActive&&!pinch){const p=mapPoint(e);if(p.inside){img.setPointerCapture?.(e.pointerId);send("/input/pointer",{type:"down",x:p.x,y:p.y})}}e.preventDefault()},{passive:false});
-window.addEventListener("pointermove",e=>{if(isTouchPointer(e)){e.preventDefault();return}if(clientActive&&!pinch&&e.buttons)sendMove(e);e.preventDefault()},{passive:false});
-window.addEventListener("pointerup",e=>{if(isTouchPointer(e)){e.preventDefault();return}if(clientActive&&!pinch){const p=mapPoint(e);if(p.inside)send("/input/pointer",{type:"up",x:p.x,y:p.y})}e.preventDefault()},{passive:false});
-window.addEventListener("pointercancel",e=>{if(isTouchPointer(e)){e.preventDefault();return}if(clientActive){const p=mapPoint(e);if(p.inside)send("/input/pointer",{type:"up",x:p.x,y:p.y})}e.preventDefault()},{passive:false});
-window.addEventListener("wheel",e=>{if(clientActive){const p=mapPoint(e);if(p.inside)send("/input/pointer",{type:"wheel",delta:-Math.sign(e.deltaY||0)*120,x:p.x,y:p.y})}e.preventDefault()},{passive:false});
-window.addEventListener("keydown",e=>{if(clientActive)send("/input/key",{type:"keydown",keyCode:e.keyCode,key:e.key})});
-window.addEventListener("keyup",e=>{if(clientActive)send("/input/key",{type:"keyup",keyCode:e.keyCode,key:e.key})});
+window.addEventListener("pointerdown",e=>{if(inAuth(e))return;if(isTouchPointer(e)){e.preventDefault();return}if(clientActive&&!pinch){const p=mapPoint(e);if(p.inside){img.setPointerCapture?.(e.pointerId);send("/input/pointer",{type:"down",x:p.x,y:p.y})}}e.preventDefault()},{passive:false});
+window.addEventListener("pointermove",e=>{if(inAuth(e))return;if(isTouchPointer(e)){e.preventDefault();return}if(clientActive&&!pinch&&e.buttons)sendMove(e);e.preventDefault()},{passive:false});
+window.addEventListener("pointerup",e=>{if(inAuth(e))return;if(isTouchPointer(e)){e.preventDefault();return}if(clientActive&&!pinch){const p=mapPoint(e);if(p.inside)send("/input/pointer",{type:"up",x:p.x,y:p.y})}e.preventDefault()},{passive:false});
+window.addEventListener("pointercancel",e=>{if(inAuth(e))return;if(isTouchPointer(e)){e.preventDefault();return}if(clientActive){const p=mapPoint(e);if(p.inside)send("/input/pointer",{type:"up",x:p.x,y:p.y})}e.preventDefault()},{passive:false});
+window.addEventListener("wheel",e=>{if(inAuth(e))return;if(clientActive){const p=mapPoint(e);if(p.inside)send("/input/pointer",{type:"wheel",delta:-Math.sign(e.deltaY||0)*120,x:p.x,y:p.y})}e.preventDefault()},{passive:false});
+window.addEventListener("keydown",e=>{if(inAuth(e))return;if(clientActive)send("/input/key",{type:"keydown",keyCode:e.keyCode,key:e.key})});
+window.addEventListener("keyup",e=>{if(inAuth(e))return;if(clientActive)send("/input/key",{type:"keyup",keyCode:e.keyCode,key:e.key})});
 function touchDist(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)}
 function touchMid(a,b){return {x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2}}
 function touchCenter(list){
@@ -182,6 +183,7 @@ function sendOpenCpnZoom(delta,mid){
   send("/input/pointer",{type:"wheel",delta:steps*120,x:p.x,y:p.y});
 }
 window.addEventListener("touchstart",e=>{
+  if(inAuth(e))return;
   if(!clientActive){e.preventDefault();return}
   if(e.touches.length>=3){
     if(pinch&&pinch.dragging&&lastTouchPoint)send("/input/pointer",{type:"up",x:lastTouchPoint.x,y:lastTouchPoint.y});
@@ -213,6 +215,7 @@ window.addEventListener("touchstart",e=>{
   e.preventDefault();
 },{passive:false});
 window.addEventListener("touchmove",e=>{
+  if(inAuth(e))return;
   if(!clientActive){e.preventDefault();return}
   if(navGesture&&e.touches.length>=3){
     const c=touchCenter(e.touches);
@@ -250,6 +253,7 @@ window.addEventListener("touchmove",e=>{
   e.preventDefault();
 },{passive:false});
 window.addEventListener("touchend",e=>{
+  if(inAuth(e))return;
   if(navGesture&&e.touches.length<3){
     if(!navGesture.moved){
       const fit=minViewScale();
@@ -275,6 +279,7 @@ window.addEventListener("touchend",e=>{
   e.preventDefault();
 },{passive:false});
 window.addEventListener("touchcancel",e=>{
+  if(inAuth(e))return;
   if(pinch&&pinch.dragging&&lastTouchPoint)send("/input/pointer",{type:"up",x:lastTouchPoint.x,y:lastTouchPoint.y});
   pinch=null;
   navGesture=null;
