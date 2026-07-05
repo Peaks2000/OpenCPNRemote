@@ -54,5 +54,6 @@ private:
   std::string password_;
   bool input_lock_applied_ = false;
   bool local_unlocked_ = false;
+  bool pause_window_suppressed_ = false;
   std::string last_active_client_;
 };

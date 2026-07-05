@@ -10,6 +10,7 @@
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
 #include <wx/timer.h>
+#include <wx/toplevel.h>
 #include <wx/wx.h>
 
 #include <random>
@@ -75,12 +76,12 @@ private:
   OpenCpnRemotePi* plugin_;
 };
 
-class RemoteLockDialog : public wxDialog {
+class RemoteLockDialog : public wxFrame {
 public:
   RemoteLockDialog(wxWindow* parent, OpenCpnRemotePi* plugin)
-      : wxDialog(nullptr, wxID_ANY, "OpenCPN Remote",
+      : wxFrame(nullptr, wxID_ANY, "OpenCPN Remote",
                  wxDefaultPosition, wxDefaultSize,
-                 wxDEFAULT_DIALOG_STYLE | wxMINIMIZE_BOX | wxRESIZE_BORDER),
+                 wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT),
         plugin_(plugin) {
     SetBackgroundColour(wxColour(16, 20, 24));
 
@@ -105,13 +106,39 @@ public:
     button->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
       if (plugin_) plugin_->UnlockLocalControl();
     });
-    outer->Add(button, 0, wxALIGN_CENTER);
+    auto* minimize = new wxButton(this, wxID_ANY, "Minimize");
+    minimize->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+      if (plugin_) plugin_->pause_window_suppressed_ = true;
+      auto* top = wxDynamicCast(wxTheApp ? wxTheApp->GetTopWindow() : nullptr,
+                                wxTopLevelWindow);
+      if (top) top->Iconize(true);
+      Iconize(true);
+    });
+    Bind(wxEVT_ICONIZE, [this](wxIconizeEvent& event) {
+      if (event.IsIconized() && plugin_) {
+        plugin_->pause_window_suppressed_ = true;
+        auto* top = wxDynamicCast(wxTheApp ? wxTheApp->GetTopWindow() : nullptr,
+                                  wxTopLevelWindow);
+        if (top) top->Iconize(true);
+      }
+      event.Skip();
+    });
+    Bind(wxEVT_CLOSE_WINDOW, [this](wxCloseEvent& event) {
+      if (plugin_) plugin_->pause_window_suppressed_ = true;
+      Hide();
+      event.Veto();
+    });
+    auto* buttons = new wxBoxSizer(wxHORIZONTAL);
+    buttons->Add(button, 0, wxRIGHT, 8);
+    buttons->Add(minimize, 0);
+    outer->Add(buttons, 0, wxALIGN_CENTER);
     outer->AddStretchSpacer(1);
 
     SetSizer(outer);
   }
 
   void FitOverParent() {
+    if (IsIconized()) return;
     wxWindow* top = wxTheApp ? wxTheApp->GetTopWindow() : nullptr;
     if (top) {
       SetSize(top->GetScreenRect());
@@ -224,6 +251,7 @@ void OpenCpnRemotePi::UpdateRemoteLock() {
   const std::string active_client = frames_->ActiveClientId();
   if (!active_client.empty() && active_client != last_active_client_) {
     local_unlocked_ = false;
+    pause_window_suppressed_ = false;
     last_active_client_ = active_client;
   }
   wxWindow* window = wxTheApp ? wxTheApp->GetTopWindow() : nullptr;
@@ -232,11 +260,15 @@ void OpenCpnRemotePi::UpdateRemoteLock() {
   if (!remote_active) {
     RestoreLocalWindow();
     local_unlocked_ = false;
+    pause_window_suppressed_ = false;
     if (active_client.empty()) last_active_client_.clear();
     return;
   }
 
   if (local_unlocked_) return;
+  if (pause_window_suppressed_) return;
+  auto* top_level = wxDynamicCast(window, wxTopLevelWindow);
+  if (top_level && top_level->IsIconized()) return;
 
   ApplyLocalInputLock(true);
 
@@ -253,6 +285,7 @@ void OpenCpnRemotePi::UnlockLocalControl() {
   frames_->ClaimLocalControl();
   last_active_client_ = frames_->ActiveClientId();
   local_unlocked_ = true;
+  pause_window_suppressed_ = false;
   RestoreLocalWindow();
 }
 

@@ -10,8 +10,10 @@ const char* WebIndexHtml() {
 <style>
 html,body{margin:0;width:100%;height:100%;background:#050608;overflow:hidden;touch-action:none}
 #stage{position:fixed;inset:0;display:grid;place-items:center;background:#050608}
-#view{max-width:100vw;max-height:100vh;width:100vw;height:100vh;object-fit:contain;image-rendering:auto;user-select:none;-webkit-user-drag:none}
+#view{max-width:100vw;max-height:100vh;width:100vw;height:100vh;object-fit:contain;image-rendering:auto;user-select:none;-webkit-user-drag:none;transform-origin:center center;will-change:transform}
 #state{position:fixed;left:10px;bottom:10px;padding:5px 8px;border-radius:6px;background:rgba(0,0,0,.58);color:#fff;font:12px system-ui,sans-serif}
+#tools{position:fixed;right:10px;top:10px;display:flex;gap:6px}
+#tools button{width:38px;height:34px;border:0;border-radius:6px;background:rgba(0,0,0,.6);color:#fff;font:18px system-ui,sans-serif}
 #auth{position:fixed;inset:0;display:none;place-items:center;background:#101418;color:#eef3f6;font:16px system-ui,sans-serif}
 #auth form{width:min(340px,calc(100vw - 32px));display:grid;gap:10px}
 #auth input,#auth button{font:inherit;padding:10px;border-radius:6px;border:1px solid #3b464d}
@@ -22,6 +24,7 @@ html,body{margin:0;width:100%;height:100%;background:#050608;overflow:hidden;tou
 <body>
 <div id="stage"><img id="view" alt=""></div>
 <div id="state">connecting</div>
+<div id="tools"><button id="zoomOut">-</button><button id="fit">1x</button><button id="zoomIn">+</button></div>
 <div id="auth"><form><strong>OpenCPN Remote password</strong><input id="password" type="password" autocomplete="current-password"><button>Connect</button></form></div>
 <button id="takeover">Resume</button>
 <script>
@@ -34,12 +37,21 @@ const state=document.getElementById("state");
 const auth=document.getElementById("auth");
 const passwordInput=document.getElementById("password");
 const takeover=document.getElementById("takeover");
+const zoomIn=document.getElementById("zoomIn");
+const zoomOut=document.getElementById("zoomOut");
+const fit=document.getElementById("fit");
 let natural={w:1,h:1};
 let busy=false,lastMove=0,pendingMove=null,clientActive=true,claimNext=true;
+let viewZoom=1,panX=0,panY=0,pinch=null;
 function authReady(){return !passwordRequired||remotePassword.length>0}
 auth.querySelector("form").addEventListener("submit",e=>{e.preventDefault();remotePassword=passwordInput.value;sessionStorage.ocpnRemotePassword=remotePassword;auth.style.display="none";heartbeat();tick()});
 takeover.addEventListener("click",()=>{claimNext=true;takeover.style.display="none";heartbeat();tick()});
 if(!authReady())auth.style.display="grid";
+function applyViewTransform(){img.style.transform=`translate(${panX}px,${panY}px) scale(${viewZoom})`}
+function setZoom(next){viewZoom=Math.max(1,Math.min(4,next));if(viewZoom===1){panX=0;panY=0}applyViewTransform()}
+zoomIn.addEventListener("click",()=>setZoom(viewZoom*1.25));
+zoomOut.addEventListener("click",()=>setZoom(viewZoom/1.25));
+fit.addEventListener("click",()=>{viewZoom=1;panX=0;panY=0;applyViewTransform()});
 function frameUrl(){return `/frame?token=${encodeURIComponent(token)}&client=${encodeURIComponent(clientId)}&t=${Date.now()}`}
 async function tick(){
   if(!authReady())return;
@@ -77,12 +89,17 @@ function heartbeat(){
 setInterval(heartbeat,1000);
 window.addEventListener("resize",heartbeat);
 heartbeat();
-window.addEventListener("pointerdown",e=>{if(clientActive){img.setPointerCapture?.(e.pointerId);send("/input/pointer",{type:"down",...mapPoint(e)})}e.preventDefault()},{passive:false});
-window.addEventListener("pointermove",e=>{if(clientActive&&e.buttons)sendMove(e);e.preventDefault()},{passive:false});
-window.addEventListener("pointerup",e=>{if(clientActive)send("/input/pointer",{type:"up",...mapPoint(e)});e.preventDefault()},{passive:false});
+window.addEventListener("pointerdown",e=>{if(clientActive&&!pinch){img.setPointerCapture?.(e.pointerId);send("/input/pointer",{type:"down",...mapPoint(e)})}e.preventDefault()},{passive:false});
+window.addEventListener("pointermove",e=>{if(clientActive&&!pinch&&e.buttons)sendMove(e);e.preventDefault()},{passive:false});
+window.addEventListener("pointerup",e=>{if(clientActive&&!pinch)send("/input/pointer",{type:"up",...mapPoint(e)});e.preventDefault()},{passive:false});
 window.addEventListener("wheel",e=>{if(clientActive)send("/input/pointer",{type:"wheel",delta:e.deltaY,...mapPoint(e)});e.preventDefault()},{passive:false});
 window.addEventListener("keydown",e=>{if(clientActive)send("/input/key",{type:"keydown",keyCode:e.keyCode,key:e.key})});
 window.addEventListener("keyup",e=>{if(clientActive)send("/input/key",{type:"keyup",keyCode:e.keyCode,key:e.key})});
+function touchDist(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)}
+function touchMid(a,b){return {x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2}}
+window.addEventListener("touchstart",e=>{if(e.touches.length===2){const m=touchMid(e.touches[0],e.touches[1]);pinch={dist:touchDist(e.touches[0],e.touches[1]),zoom:viewZoom,panX,panY,x:m.x,y:m.y};e.preventDefault()}},{passive:false});
+window.addEventListener("touchmove",e=>{if(pinch&&e.touches.length===2){const m=touchMid(e.touches[0],e.touches[1]);viewZoom=Math.max(1,Math.min(4,pinch.zoom*(touchDist(e.touches[0],e.touches[1])/pinch.dist)));panX=pinch.panX+(m.x-pinch.x);panY=pinch.panY+(m.y-pinch.y);if(viewZoom===1){panX=0;panY=0}applyViewTransform();e.preventDefault()}},{passive:false});
+window.addEventListener("touchend",e=>{if(e.touches.length<2)pinch=null},{passive:false});
 tick();
 </script>
 </body>
