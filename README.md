@@ -43,6 +43,11 @@ OpenCPN Remote listening on http://0.0.0.0:8765/?token=...
 
 Open that URL from another device on the same network, replacing `0.0.0.0` with the host machine's LAN IP address.
 
+##Mobile gesures 
+2 fingers to pan the map
+Triple tap with 3 fingers to zoom in and 3 fingers to pan 
+
+
 ## Security notes
 
 This is a remote-control plugin. Use it only on trusted networks unless you place it behind HTTPS/VPN access control. The plugin intentionally captures the OpenCPN window only, but any sensitive information visible inside OpenCPN will be visible to authenticated browser clients.
